@@ -12,6 +12,15 @@ import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
 import ListItemText from "@material-ui/core/ListItemText";
 import Checkbox from "@material-ui/core/Checkbox";
+import {
+  Dialog,
+  DialogTitle,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
+} from "@material-ui/core";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { auth, db } from "./firebase";
 
@@ -19,6 +28,8 @@ export function App(props) {
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [new_task, setNewTask] = useState("");
+  const [open, setOpen] = useState(false);
+  const [taskId, setTaskId] = useState("");
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(u => {
@@ -47,6 +58,7 @@ export function App(props) {
             updated_tasks.push({
               text: data.text,
               checked: data.checked,
+              priority: data.priority,
               id: doc.id
             });
           });
@@ -72,18 +84,25 @@ export function App(props) {
     db.collection("users")
       .doc(user.uid)
       .collection("tasks")
-      .add({ text: new_task, checked: false })
+      .add({ text: new_task, checked: false, priority: "" })
       .then(() => {
         setNewTask("");
       });
   };
 
-  const handleDeleteTask = task_id => {
+  const handleDeleteTask = () => {
     db.collection("users")
       .doc(user.uid)
       .collection("tasks")
-      .doc(task_id)
+      .doc(taskId)
       .delete();
+
+    setOpen(false);
+  };
+
+  const handleConfirmDeleteTask = task_id => {
+    setTaskId(task_id);
+    setOpen(true);
   };
 
   const handleCheckTask = (checked, task_id) => {
@@ -92,6 +111,14 @@ export function App(props) {
       .collection("tasks")
       .doc(task_id)
       .update({ checked: checked });
+  };
+
+  const handleSetPriority = (value, task_id) => {
+    db.collection("users")
+      .doc(user.uid)
+      .collection("tasks")
+      .doc(task_id)
+      .update({ priority: value });
   };
 
   if (!user) {
@@ -132,37 +159,134 @@ export function App(props) {
                 setNewTask(e.target.value);
               }}
             />
-            <Button variant="contained" color="primary" onClick={handleAddTask}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleAddTask}
+              disabled={new_task === ""}
+            >
               Add
             </Button>
           </div>
+          {tasks.length > 0 && (
+            <Typography style={{ marginTop: 30 }}>Incomplete Tasks</Typography>
+          )}
           <List>
-            {tasks.map(value => (
-              <ListItem key={value.id}>
-                <ListItemIcon>
-                  <Checkbox
-                    checked={value.checked}
-                    onChange={(e, checked) => {
-                      handleCheckTask(checked, value.id);
-                    }}
-                    // checked={checked.indexOf(value) !== -1}
-                  />
-                </ListItemIcon>
-                <ListItemText primary={value.text} />
-                <ListItemSecondaryAction>
-                  <IconButton
-                    onClick={() => {
-                      handleDeleteTask(value.id);
-                    }}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
+            {tasks
+              .filter(t => t.checked === false)
+              .map(value => (
+                <ListItem key={value.id}>
+                  <ListItemIcon>
+                    <Checkbox
+                      checked={value.checked}
+                      onChange={(e, checked) => {
+                        handleCheckTask(checked, value.id);
+                      }}
+                      // checked={checked.indexOf(value) !== -1}
+                    />
+                  </ListItemIcon>
+                  <ListItemText primary={value.text} />
+                  <ListItemSecondaryAction>
+                    <div>
+                      <FormControl>
+                        <InputLabel>Priority</InputLabel>
+                        <Select
+                          value={value.priority}
+                          onChange={e => {
+                            handleSetPriority(e.target.value, value.id);
+                          }}
+                          style={{ width: 90 }}
+                        >
+                          <MenuItem value={"low"}>Low</MenuItem>
+                          <MenuItem value={"medium"}>Medium</MenuItem>
+                          <MenuItem value={"high"}>High</MenuItem>
+                        </Select>
+                      </FormControl>
+                      <IconButton
+                        onClick={() => {
+                          handleConfirmDeleteTask(value.id);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </div>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))}
+          </List>
+          {tasks.length > 0 && (
+            <Typography style={{ marginTop: 30 }}>Complete Tasks</Typography>
+          )}
+          <List>
+            {tasks
+              .filter(t => t.checked === true)
+              .map(value => (
+                <ListItem key={value.id}>
+                  <ListItemIcon>
+                    <Checkbox
+                      checked={value.checked}
+                      onChange={(e, checked) => {
+                        handleCheckTask(checked, value.id);
+                      }}
+                      // checked={checked.indexOf(value) !== -1}
+                    />
+                  </ListItemIcon>
+                  <ListItemText primary={value.text} />
+                  <ListItemSecondaryAction>
+                    <div>
+                      <FormControl>
+                        <InputLabel>Priority</InputLabel>
+                        <Select
+                          value={value.priority}
+                          onChange={e => {
+                            handleSetPriority(e.target.value, value.id);
+                          }}
+                          style={{ width: 90 }}
+                        >
+                          <MenuItem value={"low"}>Low</MenuItem>
+                          <MenuItem value={"medium"}>Medium</MenuItem>
+                          <MenuItem value={"high"}>High</MenuItem>
+                        </Select>
+                      </FormControl>
+                      <IconButton
+                        onClick={() => {
+                          handleConfirmDeleteTask(value.id);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </div>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))}
           </List>
         </Paper>
       </div>
+      <Dialog
+        open={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+      >
+        <DialogTitle>Are you sure you want to delete this task?</DialogTitle>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setOpen(false);
+            }}
+            variant="contained"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteTask}
+            variant="contained"
+            color="primary"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }
