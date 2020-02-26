@@ -3,13 +3,13 @@ import "firebase/auth";
 import "firebase/firestore";
 
 const config = {
-  apiKey: "AIzaSyAHOdwo289bsaLMZrMbIUK_nuvVelAOm5M",
-  authDomain: "todo-c9dc0.firebaseapp.com",
-  databaseURL: "https://todo-c9dc0.firebaseio.com",
-  projectId: "todo-c9dc0",
-  storageBucket: "todo-c9dc0.appspot.com",
-  messagingSenderId: "82557749251",
-  appId: "1:82557749251:web:adbf0643a6df7dcb"
+  apiKey: "AIzaSyD5EreuAqZF3K8PG7hDEFjNUluHZuwYFGU",
+  authDomain: "healthapp-introtocoding.firebaseapp.com",
+  databaseURL: "https://healthapp-introtocoding.firebaseio.com",
+  projectId: "healthapp-introtocoding",
+  storageBucket: "healthapp-introtocoding.appspot.com",
+  messagingSenderId: "346300730326",
+  appId: "1:346300730326:web:f00deafa9b7bbb63147277"
 };
 
 firebase.initializeApp(config);
